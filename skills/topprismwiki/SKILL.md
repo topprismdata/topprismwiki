@@ -1,11 +1,12 @@
 ---
 name: topprismwiki
-description: Route governed company-knowledge workflows for preview, formal update, query, context, graph, batch status, diagnostics, and source governance. Use when a user asks to update or inspect a Topprismwiki knowledge base.
+description: Route TopprismWiki enterprise knowledge governance workflows for evidence-aware preview, formal update, query, context, graph, batch status, diagnostics, and source governance. Use when a user asks to update or inspect a governed TopprismWiki knowledge base.
 ---
 
-# Topprismwiki
+# TopprismWiki
 
-Topprismwiki is a governed company-knowledge workflow. This package exposes
+TopprismWiki is an evidence-governed knowledge layer for Agentic AI. This
+package exposes
 one entry skill; the files under `subskills/` are internal modules and must not
 be installed or presented as peer Skills.
 
