@@ -1,0 +1,15 @@
+{
+  "batch_id": "demo-batch-001",
+  "facts": [
+    {
+      "status": "formalized",
+      "target": "projects/demo-project.md",
+      "content": "# Demo project\n\n- Status: evidence-backed example.\n",
+      "evidence": {
+        "source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "location": "page 1, paragraph 2",
+        "quote": "Synthetic evidence only."
+      }
+    }
+  ]
+}

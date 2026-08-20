@@ -1,0 +1,22 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate skills
+        run: |
+          python3 -m compileall -q skills/topprismwiki/scripts
+          python3 skills/topprismwiki/scripts/validate_package.py skills/topprismwiki
+      - name: Run tests
+        run: python3 -m unittest discover -s skills/topprismwiki/tests -v
+      - name: Public safety scan
+        run: python3 skills/topprismwiki/scripts/check_public_safety.py .

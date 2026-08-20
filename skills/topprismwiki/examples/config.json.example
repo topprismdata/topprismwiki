@@ -1,0 +1,15 @@
+{
+  "schema": "topprismwiki-public-runner-v1",
+  "timezone": "Asia/Shanghai",
+  "workspace": "workspace",
+  "vault": "vault",
+  "wiki": "wiki",
+  "privacy_mode": "masked",
+  "validation": {"obsidian_cli_required_for_apply": true},
+  "adapters": {
+    "wechat_cli": "wechat-cli",
+    "officecli": "officecli",
+    "vision_base_url": "http://127.0.0.1:8088/v1",
+    "vision_model": "<local-vision-model>"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema": "topprismwiki-batches-v1",
+  "batches": [
+    {
+      "batch_id": "demo-wechat-001",
+      "source": "wechat",
+      "mode": "preview",
+      "state": "accepted",
+      "started_at": "2026-01-01T09:00:00+08:00",
+      "completed_at": "2026-01-01T09:01:00+08:00",
+      "coverage": {"units": 3, "messages": 18, "attachments": 2},
+      "outcomes": {"formalized": 4, "duplicate": 2, "quarantined": 1},
+      "watermark_advanced": false,
+      "retryable_units": ["demo-unit-003"]
+    },
+    {
+      "batch_id": "demo-documents-002",
+      "source": "documents",
+      "mode": "preview",
+      "state": "quarantined",
+      "started_at": "2026-01-02T10:00:00+08:00",
+      "completed_at": "2026-01-02T10:03:00+08:00",
+      "coverage": {"units": 2, "messages": 2, "attachments": 1},
+      "outcomes": {"formalized": 1, "evidence_insufficient": 1},
+      "watermark_advanced": false,
+      "retryable_units": ["demo-document-family-002"]
+    }
+  ]
+}

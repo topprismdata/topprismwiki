@@ -1,0 +1,30 @@
+# Runtime data and private deployment state
+.topprismwiki/
+workspace/
+vault/
+*.jsonl
+*.sqlite
+*.db
+*.md.bak
+
+# Local environments and generated output
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.html
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.docx
+*.xlsx
+*.pptx
+.DS_Store
+
+# Private adapter and endpoint configuration
+*.local.*
+config.local.*
+.env
+.env.*
