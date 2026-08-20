@@ -27,6 +27,8 @@ Topprismwiki 是一个公司级知识治理技能包：它把来源批准、证�
 
 ## 快速开始
 
+完整安装路径见[安装与首次运行](docs/zh-CN/getting-started.md)，第一次使用建议先跑[合成数据闭环](docs/zh-CN/synthetic-walkthrough.md)。
+
 ```bash
 git clone <your-repository-url> topprismwiki
 cd topprismwiki
@@ -36,6 +38,14 @@ python3 skills/topprismwiki/scripts/topprismwiki.py preview --source all --proje
 python3 skills/topprismwiki/scripts/topprismwiki.py status --project /path/to/my-wiki
 python3 skills/topprismwiki/scripts/topprismwiki.py dashboard build --project /path/to/my-wiki
 ```
+
+遇到 `blocked` 或非零退出码时，先运行：
+
+```bash
+python3 skills/topprismwiki/scripts/topprismwiki.py diagnose --project /path/to/my-wiki
+```
+
+再按[故障排查](docs/zh-CN/troubleshooting.md)查询错误码。完整命令和状态说明见[命令与运维](docs/zh-CN/operations.md)。
 
 `update` 是唯一允许提交正式知识的命令，并要求明确的 `--authorized` 和已审核的 `review.json`：
 
@@ -69,7 +79,7 @@ my-wiki/
 | 状态与 Batch | 批次、隔离项、水位和健康状态 | Python |
 | 治理 | 来源批准、排除、重新准入、重试和验收 | Python；明确用户授权 |
 
-详细依赖和模型要求见 [dependencies-and-routing.md](skills/topprismwiki/references/dependencies-and-routing.md)。
+详细依赖和模型要求见 [dependencies-and-routing.md](skills/topprismwiki/references/dependencies-and-routing.md)，当前能力边界见[能力矩阵](skills/topprismwiki/references/capability-matrix.md)。
 
 ## Agent 路由
 
@@ -89,6 +99,8 @@ python3 skills/topprismwiki/scripts/topprismwiki.py dashboard build --project /p
 
 看板展示批次状态、覆盖数量、隔离项、可重试单元和水位状态，不展示原始消息、秘密或未经脱敏的绝对路径。看板按钮只提供可复制命令，不直接执行写操作。
 
+看板是只读HTML投影，不是控制平面。它不会直接执行正式提交、重试或来源治理。
+
 ## 隐私与公开范围
 
 仓库中的联系人、群聊、客户、项目、文件、哈希、路径和时间均为合成示例。真实聊天、业务文档、Vault、Workspace、状态账本、模型端点和凭证不得提交。发布前运行：
@@ -97,11 +109,17 @@ python3 skills/topprismwiki/scripts/topprismwiki.py dashboard build --project /p
 python3 skills/topprismwiki/scripts/check_public_safety.py .
 ```
 
-完整规则见 [privacy.md](skills/topprismwiki/references/privacy.md) 和 [docs/privacy.md](docs/privacy.md)。
+完整规则见 [隐私文档](docs/zh-CN/privacy.md)、[FAQ](docs/zh-CN/faq.md) 和 [privacy contract](skills/topprismwiki/references/privacy.md)。
 
 ## 状态和错误处理
 
-批次状态包括 `accepted`、`no_change`、`quarantined`、`blocked`、`partial`、`rolled_back` 和 `review_required`。`retry` 只处理指定单元，`validate` 只读验收；重复运行同一输入应产生零正式变更。
+批次状态包括 `accepted`、`no_change`、`previewed`、`quarantined`、`blocked`、`partial`、`rolled_back`、`review_required` 和 `retry_queued`。`retry` 只处理指定单元，`validate` 只读验收；重复运行同一输入应产生零正式变更。
+
+错误输出包含稳定 `code`、原因、下一步和文档锚点。无法解决时，可生成脱敏诊断包并通过 [GitHub Issue模板](.github/ISSUE_TEMPLATE/bug_report.yml) 求助；不要上传聊天、业务文档、Vault或凭证。
+
+## 能力边界
+
+公开Runner的功能分为 `built-in`、`adapter-required` 和 `not-yet-supported`。公开包不会自行导出微信、解析Office、调用视觉/ASR服务，也不宣称自动执行Obsidian提交后验收。详见[能力矩阵](skills/topprismwiki/references/capability-matrix.md)和[适配器接入](docs/zh-CN/adapters.md)。
 
 ## 许可证
 

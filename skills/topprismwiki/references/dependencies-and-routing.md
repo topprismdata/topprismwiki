@@ -28,3 +28,9 @@ credentials or unrestricted raw Workspace directories.
 
 The same model may fill multiple roles sequentially, but role separation must
 remain visible in the artifacts and permissions.
+
+The matrix describes deployment capabilities, not bundled dependencies. The
+public Runner can execute core JSONL workflows without `wechat-cli`, `officecli`,
+Obsidian CLI, a vision endpoint or ffmpeg. Run `doctor` for path/configuration
+checks and consult [capability-matrix.md](capability-matrix.md) before claiming
+an end-to-end source workflow is available.

@@ -1,0 +1,119 @@
+{
+  "schema": "topprismwiki-errors-v1",
+  "errors": {
+    "INVALID_JSON": {
+      "cause": "An input, configuration, ledger, or review JSON file cannot be parsed.",
+      "next_action": "Open the named file, validate it as UTF-8 JSON, and rerun the same command.",
+      "retryable": true,
+      "docs": "docs/zh-CN/troubleshooting.md#invalid-json"
+    },
+    "EXPLICIT_UPDATE_AUTHORIZATION_REQUIRED": {
+      "cause": "The update command was run without the explicit --authorized flag.",
+      "next_action": "Run preview, review the generated package, then rerun update with --authorized when formal writing is intended.",
+      "retryable": false,
+      "docs": "docs/zh-CN/troubleshooting.md#authorization-required"
+    },
+    "REVIEW_FILE_MISSING": {
+      "cause": "The batch has no reviewed decision package at the expected path.",
+      "next_action": "Copy the review template to review.json, replace it with reviewed facts and evidence, then rerun update with the same batch ID.",
+      "retryable": true,
+      "docs": "docs/zh-CN/troubleshooting.md#review-file-missing"
+    },
+    "REVIEW_FACTS_MUST_BE_ARRAY": {
+      "cause": "The review package does not contain a facts array.",
+      "next_action": "Compare the file with examples/review.json.example and add a JSON array named facts.",
+      "retryable": true,
+      "docs": "docs/zh-CN/troubleshooting.md#review-schema"
+    },
+    "INVALID_TARGET": {
+      "cause": "A formal target is absolute, escapes the wiki directory, or is not a Markdown file.",
+      "next_action": "Use a relative .md path below the configured wiki directory.",
+      "retryable": true,
+      "docs": "docs/zh-CN/troubleshooting.md#review-schema"
+    },
+    "INCOMPLETE_FACT": {
+      "cause": "A formal fact is missing content or an evidence object.",
+      "next_action": "Add non-empty Markdown content and an evidence object for the fact, or mark it as a non-formal outcome.",
+      "retryable": true,
+      "docs": "docs/zh-CN/troubleshooting.md#review-schema"
+    },
+    "MISSING_SOURCE_SHA256": {
+      "cause": "The evidence object does not contain a 64-character SHA-256 value.",
+      "next_action": "Rebuild the evidence package from the unchanged source and copy its SHA-256 into the review package.",
+      "retryable": true,
+      "docs": "docs/zh-CN/troubleshooting.md#evidence-hash"
+    },
+    "BATCH_NOT_FOUND": {
+      "cause": "The requested batch ID is absent from the private batch ledger.",
+      "next_action": "Run batch list, copy the exact ID, and do not invent a replacement ID for retry or validate.",
+      "retryable": false,
+      "docs": "docs/zh-CN/troubleshooting.md#batch-not-found"
+    },
+    "UNIT_NOT_FOUND": {
+      "cause": "The unit ID is neither a batch ID nor a retryable unit in the ledger.",
+      "next_action": "Run batch list/show and use the recorded unit ID; inspect the source adapter output if it is absent.",
+      "retryable": false,
+      "docs": "docs/zh-CN/troubleshooting.md#unit-not-found"
+    },
+    "ACCEPTED_BATCH_MISSING_COMMIT_REPORT": {
+      "cause": "A batch is marked accepted but its commit report is missing.",
+      "next_action": "Stop further writes, preserve the private run directory and run diagnose before repairing the ledger.",
+      "retryable": false,
+      "docs": "docs/zh-CN/troubleshooting.md#commit-report-missing"
+    },
+    "UNKNOWN_BATCH_STATE": {
+      "cause": "The batch ledger contains a state outside the documented state set.",
+      "next_action": "Preserve the ledger, run diagnose, and resolve the state manually before retrying.",
+      "retryable": false,
+      "docs": "docs/zh-CN/troubleshooting.md#unknown-state"
+    },
+    "REASON_REQUIRED": {
+      "cause": "An exclusion or readmission event was submitted without an audit reason.",
+      "next_action": "Provide a concise non-sensitive reason with --reason and rerun the command.",
+      "retryable": true,
+      "docs": "docs/zh-CN/troubleshooting.md#governance-reason"
+    },
+    "CORE_PYTHON_MISSING": {
+      "cause": "The interpreter is older than Python 3.11.",
+      "next_action": "Install or select Python 3.11+ and rerun doctor --capability core --strict.",
+      "retryable": false,
+      "docs": "docs/zh-CN/getting-started.md#python"
+    },
+    "OBSIDIAN_CLI_MISSING": {
+      "cause": "The Obsidian CLI is not available on PATH.",
+      "next_action": "Install and enable the documented Obsidian CLI only when the deployment requires that production gate.",
+      "retryable": false,
+      "docs": "docs/zh-CN/production-setup.md#obsidian"
+    },
+    "WECHAT_ADAPTER_MISSING": {
+      "cause": "The configured WeChat adapter executable is not available on PATH.",
+      "next_action": "Install a compatible private adapter or use the JSONL contract with a user-owned exporter.",
+      "retryable": false,
+      "docs": "docs/zh-CN/adapters.md#wechat"
+    },
+    "OFFICECLI_MISSING": {
+      "cause": "The configured Office extraction command is not available on PATH.",
+      "next_action": "Install a compatible officecli implementation or precompute the documented evidence JSONL.",
+      "retryable": false,
+      "docs": "docs/zh-CN/adapters.md#office"
+    },
+    "VISION_CONFIGURATION_MISSING": {
+      "cause": "No image-capable endpoint is configured for visual evidence review.",
+      "next_action": "Configure a local or explicitly approved endpoint and verify that the model supports OCR, layout, tables, charts and diagrams.",
+      "retryable": false,
+      "docs": "docs/zh-CN/production-setup.md#vision"
+    },
+    "FFMPEG_MISSING": {
+      "cause": "ffmpeg is unavailable for media preprocessing.",
+      "next_action": "Install ffmpeg or quarantine audio/video units until a compatible media pipeline is available.",
+      "retryable": false,
+      "docs": "docs/zh-CN/adapters.md#media"
+    },
+    "UNKNOWN_ERROR": {
+      "cause": "The command failed without a catalogued cause.",
+      "next_action": "Run diagnose, preserve the redacted output and open a GitHub Issue without attaching private evidence.",
+      "retryable": false,
+      "docs": "docs/zh-CN/troubleshooting.md#unknown-error"
+    }
+  }
+}

@@ -11,3 +11,8 @@ The closed interval is interpreted in the configured timezone. Failed or
 quarantined units do not advance watermarks. Group names, member lists,
 filenames, and one-off brand mentions are never sufficient evidence for a
 customer, project, delivery, adoption, or person relationship.
+
+The source adapter owns approved-session lookup, closed-interval filtering and
+durable per-session watermarks. The public Runner consumes the resulting JSONL
+records and reports their supplied coverage; it does not connect to WeChat or
+verify the adapter's filtering independently.

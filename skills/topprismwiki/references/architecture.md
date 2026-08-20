@@ -17,3 +17,8 @@ watermarks.
 
 The public examples are synthetic. A real deployment must keep actual raw
 evidence outside Git and configure a private source registry.
+
+See [capability-matrix.md](capability-matrix.md) for the boundary between the
+reference Runner, external adapters and not-yet-supported production gates.
+When a command fails, use the stable error catalog and `diagnose`; do not repair
+state by editing Vault pages or ledgers manually.

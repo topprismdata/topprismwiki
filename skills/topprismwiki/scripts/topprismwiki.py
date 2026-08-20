@@ -19,7 +19,16 @@ from zoneinfo import ZoneInfo
 
 
 SCHEMA = "topprismwiki-public-runner-v1"
-STATES = {"accepted", "no_change", "quarantined", "blocked", "partial", "rolled_back", "review_required", "retry_queued"}
+STATES = {"accepted", "no_change", "previewed", "quarantined", "blocked", "partial", "rolled_back", "review_required", "retry_queued"}
+ERROR_CATALOG_PATH = Path(__file__).resolve().parents[1] / "references" / "error-catalog.json"
+CAPABILITY_ERROR_CODES = {
+    "core": "CORE_PYTHON_MISSING",
+    "obsidian": "OBSIDIAN_CLI_MISSING",
+    "wechat": "WECHAT_ADAPTER_MISSING",
+    "documents": "OFFICECLI_MISSING",
+    "vision": "VISION_CONFIGURATION_MISSING",
+    "media": "FFMPEG_MISSING",
+}
 SECRET_PATTERNS = (
     re.compile(r"(?i)(api[_ -]?key|access[_ -]?token|secret|password|passwd|authorization)\s*[:=]\s*\S+"),
     re.compile(r"\bsk-[A-Za-z0-9_-]{16,}\b"),
@@ -30,6 +39,50 @@ REL_RE = re.compile(r"(?m)^-\s+\[\[([^\]|]+)(?:\|[^\]]+)?\]\]\s*·\s*([a-z_]+)\s
 
 class RunnerError(RuntimeError):
     pass
+
+
+def error_catalog() -> dict[str, dict[str, Any]]:
+    try:
+        payload = json.loads(ERROR_CATALOG_PATH.read_text(encoding="utf-8"))
+        return payload.get("errors", {})
+    except (OSError, json.JSONDecodeError, AttributeError):
+        return {}
+
+
+def error_code(raw: str) -> str:
+    token = str(raw).split(":", 1)[0].strip()
+    legacy = {
+        "invalid_json": "INVALID_JSON",
+        "explicit_update_authorization_required": "EXPLICIT_UPDATE_AUTHORIZATION_REQUIRED",
+        "batch_not_found": "BATCH_NOT_FOUND",
+        "unit_not_found": "UNIT_NOT_FOUND",
+        "review_facts_must_be_array": "REVIEW_FACTS_MUST_BE_ARRAY",
+        "invalid_target": "INVALID_TARGET",
+        "incomplete_fact": "INCOMPLETE_FACT",
+        "missing_source_sha256": "MISSING_SOURCE_SHA256",
+        "accepted_batch_missing_commit_report": "ACCEPTED_BATCH_MISSING_COMMIT_REPORT",
+        "unknown_batch_state": "UNKNOWN_BATCH_STATE",
+        "reason_required": "REASON_REQUIRED",
+    }
+    candidate = legacy.get(token.lower(), token.upper() if token else "UNKNOWN_ERROR")
+    known = set(error_catalog())
+    return candidate if not known or candidate in known else "UNKNOWN_ERROR"
+
+
+def error_details(raw: str, detail: str | None = None) -> dict[str, Any]:
+    code = error_code(raw)
+    catalog = error_catalog()
+    item = catalog.get(code, catalog.get("UNKNOWN_ERROR", {}))
+    result: dict[str, Any] = {
+        "code": code,
+        "cause": item.get("cause", "The command failed without a catalogued cause."),
+        "next_action": item.get("next_action", "Run diagnose and preserve the redacted output."),
+        "retryable": bool(item.get("retryable", False)),
+        "docs": item.get("docs", "docs/zh-CN/troubleshooting.md#unknown-error"),
+    }
+    if detail:
+        result["detail"] = redact(detail)
+    return result
 
 
 def now(tz: ZoneInfo) -> str:
@@ -52,6 +105,7 @@ def redact(value: str) -> str:
     for pattern in SECRET_PATTERNS:
         value = pattern.sub("[REDACTED]", value)
     value = re.sub(r"(?i)(/(?:Users|home)/)[^/\s]+", r"\1<user>", value)
+    value = re.sub(r"(?i)(/(?:private/)?var/folders/)[^/\s]+(?:/[^/\s]+)*", r"\1<temp>", value)
     return value
 
 
@@ -143,7 +197,7 @@ def init_project(args: argparse.Namespace) -> int:
         if not path.exists():
             atomic_json(path, value)
     (project.workspace / "inbox").mkdir(parents=True, exist_ok=True)
-    print(json.dumps({"state": "initialized", "project": str(root), "config": str(project.control / "config.json")}, ensure_ascii=False, indent=2))
+    print(json.dumps({"state": "initialized", "project": redact(str(root)), "config": redact(str(project.control / "config.json"))}, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -151,21 +205,36 @@ def command_exists(command: str) -> bool:
     return shutil.which(command) is not None
 
 
+def capability_checks(project: Project) -> dict[str, dict[str, Any]]:
+    adapters = project.config.get("adapters", {})
+    return {
+        "core": {"ok": sys.version_info >= (3, 11), "detail": f"python {sys.version_info.major}.{sys.version_info.minor}", "verification": "runtime"},
+        "obsidian": {"ok": command_exists("obsidian"), "detail": "obsidian CLI", "verification": "path"},
+        "wechat": {"ok": command_exists(adapters.get("wechat_cli", "wechat-cli")), "detail": "wechat adapter", "verification": "path"},
+        "documents": {"ok": command_exists(adapters.get("officecli", "officecli")), "detail": "officecli", "verification": "path"},
+        "vision": {"ok": bool(adapters.get("vision_base_url")), "detail": "configured image-capable endpoint", "verification": "configuration_only"},
+        "media": {"ok": command_exists("ffmpeg"), "detail": "ffmpeg", "verification": "path"},
+    }
+
+
 def doctor(args: argparse.Namespace) -> int:
     project = project_from(args)
     capability = args.capability
-    checks: dict[str, dict[str, Any]] = {
-        "core": {"ok": sys.version_info >= (3, 11), "detail": f"python {sys.version_info.major}.{sys.version_info.minor}"},
-        "obsidian": {"ok": command_exists("obsidian"), "detail": "obsidian CLI"},
-        "wechat": {"ok": command_exists(project.config.get("adapters", {}).get("wechat_cli", "wechat-cli")), "detail": "wechat adapter"},
-        "documents": {"ok": command_exists(project.config.get("adapters", {}).get("officecli", "officecli")), "detail": "officecli"},
-        "vision": {"ok": bool(project.config.get("adapters", {}).get("vision_base_url")), "detail": "configured image-capable endpoint"},
-        "media": {"ok": command_exists("ffmpeg"), "detail": "ffmpeg"},
-    }
+    checks = capability_checks(project)
     selected = checks if capability == "all" else {capability: checks.get(capability, {"ok": False, "detail": "unknown capability"})}
-    required = [row for name, row in selected.items() if name == "core" or (name == "obsidian" and args.strict)]
+    required_names = list(selected) if args.strict else ["core"]
+    for name, row in selected.items():
+        code = CAPABILITY_ERROR_CODES.get(name, "UNKNOWN_ERROR")
+        details = error_details(code)
+        row.update({
+            "required": name in required_names,
+            "code": None if row["ok"] else details["code"],
+            "remediation": None if row["ok"] else details["next_action"],
+            "docs": details["docs"],
+        })
+    required = [row for name, row in selected.items() if name in required_names]
     state = "accepted" if all(row["ok"] for row in required) else "blocked"
-    print(json.dumps({"state": state, "project": str(project.root), "capability": capability, "checks": selected, "strict": args.strict}, ensure_ascii=False, indent=2))
+    print(json.dumps({"state": state, "project": redact(str(project.root)), "capability": capability, "checks": selected, "strict": args.strict}, ensure_ascii=False, indent=2))
     return 0 if state == "accepted" else 2
 
 
@@ -265,7 +334,7 @@ def preview(args: argparse.Namespace) -> int:
     batch["state"] = "no_change" if not records else "previewed"
     batch["completed_at"] = now(project.tz)
     save_batch(project, batch)
-    print(json.dumps({"state": batch["state"], "batch": batch, "review_template": str(project.runs / batch["batch_id"] / "review-template.json")}, ensure_ascii=False, indent=2))
+    print(json.dumps({"state": batch["state"], "batch": batch, "review_template": redact(str(project.runs / batch["batch_id"] / "review-template.json"))}, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -292,7 +361,8 @@ def validate_review(review: dict[str, Any], project: Project) -> list[dict[str, 
 
 def apply_update(args: argparse.Namespace) -> int:
     if not args.authorized:
-        print(json.dumps({"state": "blocked", "error": "explicit_update_authorization_required"}, ensure_ascii=False, indent=2))
+        payload = {"state": "blocked", "error": "explicit_update_authorization_required", **error_details("explicit_update_authorization_required")}
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
         return 2
     project = project_from(args)
     if args.batch_id:
@@ -305,7 +375,8 @@ def apply_update(args: argparse.Namespace) -> int:
     if not review_path.is_file():
         batch.update({"state": "review_required", "completed_at": now(project.tz)})
         save_batch(project, batch)
-        print(json.dumps({"state": "review_required", "batch": batch, "review": str(review_path)}, ensure_ascii=False, indent=2))
+        payload = {"state": "review_required", "batch": batch, "review": redact(str(review_path)), "error": "review_file_missing", **error_details("review_file_missing")}
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
         return 2
     try:
         facts = validate_review(read_json(review_path, {}), project)
@@ -372,7 +443,7 @@ def context(args: argparse.Namespace) -> int:
         used += len(addition)
     output = project.artifacts / "contexts" / f"context-{datetime.now(project.tz).strftime('%Y%m%d-%H%M%S')}.md"
     atomic_write(output, "".join(rows))
-    print(json.dumps({"state": "accepted", "output": str(output), "characters": used}, ensure_ascii=False, indent=2))
+    print(json.dumps({"state": "accepted", "output": redact(str(output)), "characters": used}, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -398,7 +469,7 @@ def status(args: argparse.Namespace) -> int:
     counts: dict[str, int] = {}
     for row in batches:
         counts[row.get("state", "unknown")] = counts.get(row.get("state", "unknown"), 0) + 1
-    payload = {"state": "accepted", "project": str(project.root), "batches": len(batches), "by_state": counts, "formal_pages": len(list(project.wiki.rglob("*.md"))), "watermarks": "per-unit; not advanced by failure"}
+    payload = {"state": "accepted", "project": redact(str(project.root)), "batches": len(batches), "by_state": counts, "formal_pages": len(list(project.wiki.rglob("*.md"))), "watermarks": "per-unit; not advanced by failure"}
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
 
@@ -440,7 +511,7 @@ main{{max-width:1180px;margin:auto;padding:32px 20px}}header{{display:flex;justi
 <script>const batches={data};const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}}[c]));const count=(state)=>batches.filter(b=>b.state===state).length;document.getElementById('generated').textContent=new Date().toLocaleString();document.getElementById('summary').innerHTML=[['Batches',batches.length,''],['Accepted',count('accepted'),'accepted'],['Review / isolate',batches.filter(b=>['review_required','quarantined','blocked'].includes(b.state)).length,'review_required'],['Formal pages','Vault gated','']].map(x=>`<div class="card"><div class="muted">${x[0]}</div><div class="value ${{x[2]}}">${x[1]}</div></div>`).join('');document.getElementById('batches').innerHTML=batches.length?batches.map(b=>`<tr><td><code>${esc(b.batch_id)}</code></td><td>${esc(b.source)}</td><td class="${{esc(b.state)}}"><span class="pill">${{esc(b.state)}}</span></td><td>${{b.coverage?.units??0}}</td><td>${{b.coverage?.messages??0}}</td><td>${{b.coverage?.attachments??0}}</td><td>${{esc(b.completed_at||'—')}}</td></tr>`).join(''):'<tr><td colspan="7" class="empty">No batches recorded</td></tr>';</script></body></html>'''
     output = Path(args.output).expanduser().resolve() if args.output else project.artifacts / "batch-dashboard.html"
     atomic_write(output, page)
-    print(json.dumps({"state": "accepted", "output": str(output), "batches": len(rows)}, ensure_ascii=False, indent=2))
+    print(json.dumps({"state": "accepted", "output": redact(str(output)), "batches": len(rows)}, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -458,8 +529,72 @@ def dashboard(args: argparse.Namespace) -> int:
     page = page.replace("__TITLE__", title).replace("__DATA__", data)
     output = Path(args.output).expanduser().resolve() if args.output else project.artifacts / "batch-dashboard.html"
     atomic_write(output, page)
-    print(json.dumps({"state": "accepted", "output": str(output), "batches": len(rows)}, ensure_ascii=False, indent=2))
+    print(json.dumps({"state": "accepted", "output": redact(str(output)), "batches": len(rows)}, ensure_ascii=False, indent=2))
     return 0
+
+
+def diagnose(args: argparse.Namespace) -> int:
+    project = project_from(args)
+    catalog = error_catalog()
+    findings: list[dict[str, Any]] = []
+    scope: dict[str, Any] = {"redacted": True}
+    if args.error_code:
+        code = error_code(args.error_code)
+        findings.append(error_details(code) if code in catalog else error_details("UNKNOWN_ERROR", args.error_code))
+
+    checks = capability_checks(project)
+    scope["environment"] = {
+        name: {
+            "ok": row["ok"],
+            "detail": row["detail"],
+            "verification": row["verification"],
+            "code": None if row["ok"] else CAPABILITY_ERROR_CODES.get(name, "UNKNOWN_ERROR"),
+        }
+        for name, row in checks.items()
+    }
+
+    batch: dict[str, Any] | None = None
+    if args.batch_id:
+        try:
+            batch = find_batch(project, args.batch_id)
+        except RunnerError as error:
+            findings.append(error_details(str(error), str(error)))
+        else:
+            scope["batch"] = redacted_record(batch)
+            run = project.runs / args.batch_id
+            review_path = run / "review.json"
+            commit_report = run / "commit-report.json"
+            state = str(batch.get("state", ""))
+            if state == "review_required" and not review_path.is_file():
+                findings.append(error_details("review_file_missing", str(review_path)))
+            if state == "accepted" and not commit_report.is_file():
+                findings.append(error_details("accepted_batch_missing_commit_report"))
+            if state not in STATES and state != "previewed":
+                findings.append(error_details("unknown_batch_state", state))
+
+    if args.unit_id:
+        scope["unit_id"] = args.unit_id
+        unit_batch = batch
+        if unit_batch is None:
+            ledger = read_json(project.batches_path, {"batches": []})
+            unit_batch = next((row for row in ledger.get("batches", []) if args.unit_id in row.get("retryable_units", [])), None)
+        if unit_batch is None:
+            findings.append(error_details("unit_not_found", args.unit_id))
+        elif args.unit_id not in unit_batch.get("retryable_units", []) and args.unit_id != unit_batch.get("batch_id"):
+            findings.append(error_details("unit_not_found", args.unit_id))
+
+    payload: dict[str, Any] = {
+        "state": "review_required" if findings else "accepted",
+        "scope": scope,
+        "findings": findings,
+        "next_action": "Resolve the listed findings and rerun the same command." if findings else "No catalogued blocking condition was found.",
+    }
+    if args.output:
+        output = Path(args.output).expanduser().resolve()
+        atomic_json(output, payload)
+        payload["output"] = redact(str(output))
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0 if not findings else 2
 
 
 def retry(args: argparse.Namespace) -> int:
@@ -483,7 +618,7 @@ def validate(args: argparse.Namespace) -> int:
     errors: list[str] = []
     if batch.get("state") == "accepted" and not (project.runs / args.batch_id / "commit-report.json").exists():
         errors.append("accepted_batch_missing_commit_report")
-    if batch.get("state") not in STATES and batch.get("state") != "previewed":
+    if batch.get("state") not in STATES:
         errors.append("unknown_batch_state")
     payload = {"state": "accepted" if not errors else "blocked", "batch_id": args.batch_id, "errors": errors, "formal_pages": len(list(project.wiki.rglob("*.md")))}
     print(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -571,6 +706,13 @@ def parser() -> argparse.ArgumentParser:
     dashboard_build.add_argument("--output")
     dashboard_build.add_argument("--title", default="Topprismwiki Batch Dashboard")
     dashboard_build.set_defaults(func=dashboard)
+    diagnose_parser = sub.add_parser("diagnose")
+    add_project_argument(diagnose_parser)
+    diagnose_parser.add_argument("--error-code")
+    diagnose_parser.add_argument("--batch-id")
+    diagnose_parser.add_argument("--unit-id")
+    diagnose_parser.add_argument("--output")
+    diagnose_parser.set_defaults(func=diagnose)
     retry_parser = sub.add_parser("retry")
     add_project_argument(retry_parser)
     retry_parser.add_argument("--unit-id", required=True)
@@ -606,7 +748,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return int(args.func(args))
     except (RunnerError, OSError, ValueError) as error:
-        print(json.dumps({"state": "blocked", "error": redact(str(error))}, ensure_ascii=False), file=sys.stderr)
+        raw = str(error)
+        payload = {"state": "blocked", "error": redact(raw), **error_details(raw, raw)}
+        print(json.dumps(payload, ensure_ascii=False), file=sys.stderr)
         return 2
 
 

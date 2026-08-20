@@ -1,0 +1,23 @@
+name: Documentation gap
+description: Report a missing, inaccurate or unreachable instruction.
+title: "[Docs] "
+labels: [documentation]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page and section
+      placeholder: "docs/en/troubleshooting.md#review-file-missing"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What could not be completed?
+      description: Include the command and expected versus actual result; use synthetic data only.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested correction

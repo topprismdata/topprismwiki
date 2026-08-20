@@ -59,7 +59,43 @@ class RunnerTests(unittest.TestCase):
             run_cli("init", cwd=project)
             result = run_cli("update", "--source", "documents", cwd=project)
             self.assertEqual(result.returncode, 2)
-            self.assertIn("explicit_update_authorization_required", result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["error"], "explicit_update_authorization_required")
+            self.assertEqual(payload["code"], "EXPLICIT_UPDATE_AUTHORIZATION_REQUIRED")
+            self.assertIn("next_action", payload)
+
+    def test_doctor_and_diagnose_explain_failures(self):
+        with tempfile.TemporaryDirectory() as raw:
+            project = Path(raw)
+            run_cli("init", cwd=project)
+            result = run_cli("doctor", "--capability", "core", "--strict", cwd=project)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            doctor = json.loads(result.stdout)
+            self.assertTrue(doctor["checks"]["core"]["required"])
+            self.assertIn("verification", doctor["checks"]["core"])
+
+            result = run_cli("diagnose", "--error-code", "REVIEW_FILE_MISSING", cwd=project)
+            self.assertEqual(result.returncode, 2)
+            diagnosis = json.loads(result.stdout)
+            self.assertEqual(diagnosis["findings"][0]["code"], "REVIEW_FILE_MISSING")
+            self.assertIn("docs", diagnosis["findings"][0])
+
+    def test_diagnose_batch_finds_missing_review_without_raw_paths(self):
+        with tempfile.TemporaryDirectory() as raw:
+            project = Path(raw)
+            run_cli("init", cwd=project)
+            inbox = project / "workspace/inbox/wechat"
+            inbox.mkdir(parents=True)
+            (inbox / "events.jsonl").write_text('{"unit_id":"demo-diagnose","messages":1}\n', encoding="utf-8")
+            preview = json.loads(run_cli("preview", "--source", "wechat", cwd=project).stdout)
+            batch_id = preview["batch"]["batch_id"]
+            update = run_cli("update", "--batch-id", batch_id, "--authorized", cwd=project)
+            self.assertEqual(update.returncode, 2)
+            result = run_cli("diagnose", "--batch-id", batch_id, cwd=project)
+            self.assertEqual(result.returncode, 2)
+            diagnosis = json.loads(result.stdout)
+            self.assertEqual(diagnosis["findings"][0]["code"], "REVIEW_FILE_MISSING")
+            self.assertNotIn(str(project), result.stdout)
 
     def test_query_and_graph_are_read_only(self):
         with tempfile.TemporaryDirectory() as raw:

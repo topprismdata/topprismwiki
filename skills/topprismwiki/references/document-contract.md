@@ -13,3 +13,8 @@ handling independently as `pass`, `needs_review`, `fail`, or
 Conflict statements coexist with scope and status labels until explicitly
 resolved. Co-occurrence is a candidate relationship only. Credentials never
 enter Markdown, logs, reports, or query output.
+
+This is the admission contract for a production adapter and review process. The
+public Runner does not independently render Office/PDF/PPT files or enforce all
+document-level gates; those units remain `adapter-required` until the capability
+matrix says otherwise.

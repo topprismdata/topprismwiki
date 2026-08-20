@@ -1,0 +1,42 @@
+name: Adapter compatibility
+description: Report a compatibility issue with a source or model adapter.
+title: "[Adapter] "
+labels: [adapter]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach exports, originals, private paths, credentials or raw model output.
+        Use aliases and synthetic fixtures.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: The report contains no private evidence or credentials.
+          required: true
+  - type: dropdown
+    id: adapter
+    attributes:
+      label: Adapter type
+      options:
+        - WeChat
+        - Office
+        - PDF/PPT/image vision
+        - Audio/video ASR
+        - Other compatible source
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Adapter and Topprismwiki versions
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Contract result
+      description: Include the synthetic fixture, schema fields and redacted error code.
+    validations:
+      required: true

@@ -5,7 +5,7 @@
       "batch_id": "demo-wechat-001",
       "source": "wechat",
       "mode": "preview",
-      "state": "accepted",
+      "state": "previewed",
       "started_at": "2026-01-01T09:00:00+08:00",
       "completed_at": "2026-01-01T09:01:00+08:00",
       "coverage": {"units": 3, "messages": 18, "attachments": 2},

@@ -1,7 +1,7 @@
 interface:
   display_name: "Topprismwiki"
   short_description: "Governed company knowledge updates, queries, and batches"
-  default_prompt: "Use $topprismwiki to preview or update a governed company knowledge base."
+  default_prompt: "Use $topprismwiki to preview, diagnose, query, or update a governed company knowledge base."
 
 policy:
   allow_implicit_invocation: true
