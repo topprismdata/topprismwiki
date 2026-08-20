@@ -6,6 +6,7 @@
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF.svg)](.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 [![Agent Skill](https://img.shields.io/badge/Agent%20Skill-%24topprismwiki-6E56CF.svg)](skills/topprismwiki/SKILL.md)
+[![TopPrism Native AI](https://img.shields.io/badge/TopPrism-Native%20AI-7C3AED.svg)](https://github.com/topprismdata)
 [![Privacy](https://img.shields.io/badge/data-public%20examples%20only-0B7A75.svg)](docs/en/privacy.md)
 
 TopprismWiki is an evidence-governed knowledge layer that turns approved
