@@ -4,6 +4,9 @@
 
 # TopprismWiki
 
+> **Language / 语言:** English primary · [中文 README](README.zh-CN.md)
+
+
 ## Enterprise Knowledge Governance Layer for Agentic AI
 
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776AB.svg)](https://www.python.org/)

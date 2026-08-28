@@ -1,5 +1,7 @@
 # TopprismWiki
 
+> **语言 / Language:** 中文为主 · [English README](README.md)
+
 ## 面向 Agentic AI 的企业知识治理层
 
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776AB.svg)](https://www.python.org/)
