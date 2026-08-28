@@ -229,6 +229,16 @@ python3 skills/topprismwiki/scripts/check_public_safety.py .
 See [SECURITY.md](SECURITY.md) and [CONTRIBUTING.md](CONTRIBUTING.md) before
 opening an issue or pull request.
 
+## TopPrism status
+
+| Field | Value |
+|---|---|
+| Purpose | Native AI · Evidence-Governed Knowledge Layer |
+| Maturity | Public reference implementation |
+| Evidence | Synthetic walkthrough and repository test suite; no production-scale knowledge-quality benchmark claim |
+| Boundary | Not a vector database, general RAG framework or automatic truth generator |
+| Related | Agent-facing context, formal knowledge publication and source adapters |
+
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).
